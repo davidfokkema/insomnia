@@ -1,23 +1,21 @@
 from textual.app import App
 from textual.containers import Container
-from textual.widgets import Header, Footer, Static
+from textual.reactive import reactive
+from textual.widget import Widget
+from textual.widgets import Footer, Header, Static
 
 
-class CurrentActivityWidget(Static):
-    tracking_state = True
-
-    def on_mount(self):
-        self.update_widget()
+class CurrentActivityWidget(Widget):
+    tracking_state = reactive(True)
 
     def toggle_tracking_state(self):
         self.tracking_state = not self.tracking_state
-        self.update_widget()
 
-    def update_widget(self):
+    def render(self):
         if self.tracking_state:
-            self.update("Tracking sleep and wake states...")
+            return "Tracking sleep and wake states..."
         else:
-            self.update("Paused tracking states")
+            return "Paused tracking states"
 
 
 class InsomniaApp(App):
