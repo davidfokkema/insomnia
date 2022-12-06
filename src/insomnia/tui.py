@@ -23,17 +23,23 @@ class InsomniaApp(App):
 
     CSS_PATH = "insomnia.css"
 
-    BINDINGS = [("t", "toggle_tracking_state()", "Toggle tracking")]
+    BINDINGS = [
+        ("t", "toggle_tracking_state()", "Toggle tracking"),
+        ("q", "quit()", "Quit"),
+    ]
 
     def compose(self):
-        self.current_activity_widget = CurrentActivityWidget(id="current")
+        self.set_interval(1, self.check_sleep)
         yield Header()
         yield Footer()
         yield Container(id="past_periods")
-        yield self.current_activity_widget
+        yield CurrentActivityWidget(id="current")
 
     def action_toggle_tracking_state(self):
-        self.current_activity_widget.toggle_tracking_state()
+        self.query_one("#current").toggle_tracking_state()
+
+    def check_sleep(self):
+        self.query_one("#past_periods").mount(Static("Hi"))
 
 
 def main():
