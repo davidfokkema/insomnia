@@ -1,0 +1,10 @@
+#past_periods {
+    border: heavy;
+    height: 1fr;
+}
+
+#current {
+    text-align: center;
+    border: heavy;
+    height: 3;
+}
