@@ -26,7 +26,7 @@ class SleepinessDisplay(Static):
         self.update(self.progressbar)
 
 
-class CurrentActivityWidget(Widget):
+class CurrentActivityWidget(Static):
     tracking_state = reactive(True)
 
     def toggle_tracking_state(self):
