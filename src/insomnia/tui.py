@@ -15,14 +15,11 @@ class SleepinessDisplay(Static):
             BarColumn(),
             TaskProgressColumn(),
         )
-        self.sleepingtask = self.progressbar.add_task("Sleeping", start=False)
-        self.set_interval(1 / 10, self.update_widget)
+        self.sleepingtask = self.progressbar.add_task("Steady sleep")
 
     def watch_sleepiness(self, sleepiness):
-        print(f"Sleepiness update: {sleepiness}")
+        self.log(f"Sleepiness update: {sleepiness}")
         self.progressbar.update(self.sleepingtask, completed=sleepiness)
-
-    def update_widget(self):
         self.update(self.progressbar)
 
 
@@ -67,6 +64,7 @@ class InsomniaApp(App):
 
     def check_sleep(self):
         self.query_one("#past_periods").mount(Static("Hi"))
+        self.query_one("#sleepiness").sleepiness += 1
 
 
 def main():
