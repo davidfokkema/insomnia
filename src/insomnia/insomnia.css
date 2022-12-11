@@ -4,7 +4,6 @@
 }
 
 #current_activity {
-    text-align: center;
     border: heavy;
     height: 3;
     layout: horizontal;
@@ -15,5 +14,5 @@
 }
 
 #sleepiness {
-    width: 1fr;
+    width: 2fr;
 }

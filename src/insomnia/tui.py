@@ -12,7 +12,7 @@ class SleepinessDisplay(Static):
     def on_mount(self):
         self.progressbar = Progress(
             TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
+            BarColumn(bar_width=None),
             TaskProgressColumn(),
         )
         self.sleepingtask = self.progressbar.add_task("Steady sleep")
@@ -31,11 +31,9 @@ class CurrentActivityWidget(Static):
 
     def watch_tracking_state(self, is_tracking):
         if is_tracking:
-            self.query_one("#tracking_state").update(
-                "Tracking sleep and wake states..."
-            )
+            self.query_one("#tracking_state").update("Tracking...")
         else:
-            self.query_one("#tracking_state").update("Paused tracking states")
+            self.query_one("#tracking_state").update("Paused tracking")
 
     def compose(self):
         yield Static(id="tracking_state")
