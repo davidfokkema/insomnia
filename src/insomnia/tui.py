@@ -3,6 +3,27 @@ from textual.containers import Container
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Footer, Header, Static
+from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn
+
+
+class SleepinessDisplay(Static):
+    sleepiness = reactive(0.0)
+
+    def on_mount(self):
+        self.progressbar = Progress(
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+        )
+        self.sleepingtask = self.progressbar.add_task("Sleeping", start=False)
+        self.set_interval(1 / 10, self.update_widget)
+
+    def watch_sleepiness(self, sleepiness):
+        print(f"Sleepiness update: {sleepiness}")
+        self.progressbar.update(self.sleepingtask, completed=sleepiness)
+
+    def update_widget(self):
+        self.update(self.progressbar)
 
 
 class CurrentActivityWidget(Widget):
@@ -11,11 +32,17 @@ class CurrentActivityWidget(Widget):
     def toggle_tracking_state(self):
         self.tracking_state = not self.tracking_state
 
-    def render(self):
-        if self.tracking_state:
-            return "Tracking sleep and wake states..."
+    def watch_tracking_state(self, is_tracking):
+        if is_tracking:
+            self.query_one("#tracking_state").update(
+                "Tracking sleep and wake states..."
+            )
         else:
-            return "Paused tracking states"
+            self.query_one("#tracking_state").update("Paused tracking states")
+
+    def compose(self):
+        yield Static(id="tracking_state")
+        yield SleepinessDisplay(id="sleepiness")
 
 
 class InsomniaApp(App):
@@ -33,10 +60,10 @@ class InsomniaApp(App):
         yield Header()
         yield Footer()
         yield Container(id="past_periods")
-        yield CurrentActivityWidget(id="current")
+        yield CurrentActivityWidget(id="current_activity")
 
     def action_toggle_tracking_state(self):
-        self.query_one("#current").toggle_tracking_state()
+        self.query_one("#current_activity").toggle_tracking_state()
 
     def check_sleep(self):
         self.query_one("#past_periods").mount(Static("Hi"))

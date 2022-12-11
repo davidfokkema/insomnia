@@ -3,8 +3,17 @@
     height: 1fr;
 }
 
-#current {
+#current_activity {
     text-align: center;
     border: heavy;
     height: 3;
+    layout: horizontal;
+}
+
+#tracking_state {
+    width: 1fr;
+}
+
+#sleepiness {
+    width: 1fr;
 }
