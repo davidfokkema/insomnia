@@ -1,9 +1,15 @@
+import time
+import humanize
+
+from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
 from textual.app import App
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Footer, Header, Static
-from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn
+
+CHECK_DELAY = 0.1
+MIN_SLEEP_DURATION = 2
 
 
 class SleepinessDisplay(Static):
@@ -50,8 +56,12 @@ class InsomniaApp(App):
         ("q", "quit()", "Quit"),
     ]
 
+    sleeping = awake = 0
+
     def compose(self):
-        self.set_interval(1, self.check_sleep)
+        self.t_last_wake = self.t_prev = time.time()
+
+        self.set_interval(CHECK_DELAY, self.check_sleep)
         yield Header()
         yield Footer()
         yield Container(id="past_periods")
@@ -61,8 +71,29 @@ class InsomniaApp(App):
         self.query_one("#current_activity").toggle_tracking_state()
 
     def check_sleep(self):
-        self.query_one("#past_periods").mount(Static("Hi"))
-        self.query_one("#sleepiness").sleepiness += 1
+        now = time.time()
+        delta_t = now - self.t_prev
+        if delta_t > MIN_SLEEP_DURATION:
+            # Just woke up
+            self.query_one("#past_periods").mount(
+                Static(
+                    f"I was active for {humanize.precisedelta(self.t_prev - self.t_last_wake)} until {time.ctime(self.t_prev)}"
+                )
+            )
+            self.query_one("#past_periods").mount(
+                Static(
+                    f"Woke up at {time.ctime(now)}; I was sleeping for {humanize.naturaldelta(now - self.t_prev)}"
+                )
+            )
+            self.t_last_wake = now
+            self.sleeping += delta_t
+        else:
+            # Still active
+            self.awake += delta_t
+        self.t_prev = now
+        self.query_one("#sleepiness").sleepiness = self.sleeping / (
+            self.awake + self.sleeping
+        )
 
 
 def main():
