@@ -1,18 +1,24 @@
 #past_periods {
-    border: heavy;
+    /* border: heavy; */
     height: 1fr;
+    border: $primary heavy;
+    padding: 0 1;
 }
 
 #current_activity {
-    border: heavy;
-    height: 3;
+    /* border: heavy; */
     layout: horizontal;
+    height: 3;
+    border: $primary heavy;
 }
+
 
 #tracking_state {
     width: 1fr;
+    padding: 0 1;
 }
 
 #sleepiness {
     width: 2fr;
+    padding: 0 1;
 }
