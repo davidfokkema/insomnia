@@ -10,13 +10,13 @@ packages = [{include = "insomnia", from = "src"}]
 python = "^3.9"
 humanize = "^4.4.0"
 rich = "^12.6.0"
-textual = "^0.5.0"
+textual = "^0.6.0"
 
 [tool.poetry.scripts]
 insomnia = "insomnia.insomnia:main"
 
 [tool.poetry.group.dev.dependencies]
-textual = {version = "^0.5.0", extras = ["dev"]}
+textual = {version = "^0.6.0", extras = ["dev"]}
 
 [build-system]
 requires = ["poetry-core"]
