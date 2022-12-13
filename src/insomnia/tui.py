@@ -21,7 +21,7 @@ class SleepinessDisplay(Static):
             BarColumn(bar_width=None),
             TaskProgressColumn(),
         )
-        self.sleepingtask = self.progressbar.add_task("Steady sleep")
+        self.sleepingtask = self.progressbar.add_task("Steady sleep", total=1.0)
 
     def watch_sleepiness(self, sleepiness):
         self.log(f"Sleepiness update: {sleepiness}")
