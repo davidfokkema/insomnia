@@ -22,3 +22,20 @@
     width: 2fr;
     padding: 0 1;
 }
+
+.log {
+    height: 3;
+    margin: 1;
+    padding: 1;
+}
+
+.active {
+    background: $primary-background;
+    color: $text;
+    text-style: bold;
+}
+
+.slept {
+    background: $boost;
+    color: $text-muted;
+}
