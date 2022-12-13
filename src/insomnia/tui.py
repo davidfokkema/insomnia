@@ -71,7 +71,7 @@ class InsomniaApp(App):
     def action_toggle_tracking_state(self):
         self.query_one("#current_activity").toggle_tracking_state()
 
-    def check_sleep(self):
+    async def check_sleep(self):
         now = time.time()
         delta_t = now - self.t_prev
         if delta_t > MIN_SLEEP_DURATION or random.random() > 0.95:
@@ -84,9 +84,9 @@ class InsomniaApp(App):
                 f"{time.ctime(self.t_prev)} — Slept for {humanize.naturaldelta(now - self.t_prev)}",
                 classes="log slept",
             )
-            self.query_one("#past_periods").mount(log_active)
-            self.query_one("#past_periods").mount(log_slept)
-            # log_slept.scroll_visible()
+            await self.query_one("#past_periods").mount(log_active)
+            await self.query_one("#past_periods").mount(log_slept)
+            log_slept.scroll_visible()
             self.t_last_wake = now
             self.sleeping += delta_t
         else:

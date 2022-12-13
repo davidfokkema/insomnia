@@ -41,9 +41,9 @@ class ScrollApp(App):
         self.query_one("#widgets").mount(new_widget)
         new_widget.scroll_visible()
 
-    def action_add_problem_widget(self):
+    async def action_add_problem_widget(self):
         new_widget = ProblemWidget()
-        self.query_one("#widgets").mount(new_widget)
+        await self.query_one("#widgets").mount(new_widget)
         new_widget.scroll_visible()
 
     def action_start_good_timer(self):
