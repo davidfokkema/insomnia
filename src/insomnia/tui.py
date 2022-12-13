@@ -74,15 +74,19 @@ class InsomniaApp(App):
         now = time.time()
         delta_t = now - self.t_prev
         if delta_t > MIN_SLEEP_DURATION:
-            # Just woke up
+            # Just woke up from sleep
             self.query_one("#past_periods").mount(
                 Static(
-                    f"I was active for {humanize.precisedelta(self.t_prev - self.t_last_wake)} until {time.ctime(self.t_prev)}"
+                    f"{time.ctime(self.t_last_wake)} -- Active for {humanize.precisedelta(self.t_prev - self.t_last_wake)}",
+                    # f"I was active for {humanize.precisedelta(self.t_prev - self.t_last_wake)} until {time.ctime(self.t_prev)}",
+                    classes="log active",
                 )
             )
             self.query_one("#past_periods").mount(
                 Static(
-                    f"Woke up at {time.ctime(now)}; I was sleeping for {humanize.naturaldelta(now - self.t_prev)}"
+                    f"{time.ctime(self.t_prev)} -- Slept for {humanize.naturaldelta(now - self.t_prev)}",
+                    # f"Woke up at {time.ctime(now)}; I was sleeping for {humanize.naturaldelta(now - self.t_prev)}"
+                    classes="log sleeping",
                 )
             )
             self.t_last_wake = now
