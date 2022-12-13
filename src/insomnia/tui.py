@@ -1,3 +1,4 @@
+import random
 import time
 import humanize
 
@@ -73,7 +74,7 @@ class InsomniaApp(App):
     def check_sleep(self):
         now = time.time()
         delta_t = now - self.t_prev
-        if delta_t > MIN_SLEEP_DURATION:
+        if delta_t > MIN_SLEEP_DURATION or random.random() > 0.97:
             # Just woke up from sleep
             self.query_one("#past_periods").mount(
                 Static(
