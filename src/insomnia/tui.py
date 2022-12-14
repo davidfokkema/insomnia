@@ -63,7 +63,7 @@ class InsomniaApp(App):
         self.t_last_wake_event = self.t_prev = time.time()
 
         self.set_interval(CHECK_DELAY, self.check_sleep)
-        yield Header()
+        yield Header(show_clock=True)
         yield Footer()
         yield Container(id="past_periods")
         yield CurrentActivityWidget(id="current_activity")
@@ -83,7 +83,7 @@ class InsomniaApp(App):
             )
             # Add log entry for the sleep period
             log_slept = Static(
-                f"{time.ctime(self.t_prev)} — Slept for {humanize.naturaldelta(now - self.t_prev)}",
+                f"{time.ctime(self.t_prev)} — Slept for {humanize.naturaldelta(delta_t)}",
                 classes="log slept",
             )
             # Await mounting the widgets and scroll to the end
