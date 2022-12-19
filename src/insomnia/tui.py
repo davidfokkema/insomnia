@@ -60,7 +60,7 @@ class InsomniaApp(App):
     sleeping = awake = 0
 
     def compose(self):
-        self.t_last_wake_event = self.t_prev = time.time()
+        self.t_last_wake_event = self.t_prev = time.monotonic()
 
         self.set_interval(CHECK_DELAY, self.check_sleep)
         yield Header(show_clock=True)
@@ -72,7 +72,7 @@ class InsomniaApp(App):
         self.query_one("#current_activity").toggle_tracking_state()
 
     async def check_sleep(self):
-        now = time.time()
+        now = time.monotonic()
         delta_t = now - self.t_prev
         if delta_t > MIN_SLEEP_DURATION:  # or random.random() > 0.95:
             # Just woke up from sleep
