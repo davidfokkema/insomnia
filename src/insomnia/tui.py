@@ -9,8 +9,9 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Footer, Header, Static
 
-CHECK_DELAY = 0.1
-MIN_SLEEP_DURATION = 2
+
+CHECK_DELAY = 1
+MIN_SLEEP_DURATION = 60
 
 
 class SleepinessDisplay(Static):
