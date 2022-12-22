@@ -61,7 +61,7 @@ class InsomniaApp(App):
     sleeping = awake = 0
 
     def compose(self):
-        self.t_last_wake_event = self.t_prev = time.time()
+        self.t_prev_wake_event = self.t_prev_check = time.time()
 
         self.set_interval(CHECK_DELAY, self.check_sleep)
         yield Header(show_clock=True)
@@ -74,34 +74,46 @@ class InsomniaApp(App):
 
     async def check_sleep(self):
         now = time.time()
-        delta_t = now - self.t_prev
-        if delta_t > MIN_SLEEP_DURATION:  # or random.random() > 0.95:
+        delta_prev_check = now - self.t_prev_check
+        if delta_prev_check > MIN_SLEEP_DURATION:  # or random.random() > 0.95:
             # Just woke up from sleep
-            # Add log entry to finish up last active period
-            log_active = Static(
-                f"{time.ctime(self.t_last_wake_event)} — Active for {humanize.precisedelta(self.t_prev - self.t_last_wake_event)}",
-                classes="log active",
+            await self.log_sleep_period(
+                active_duration=self.t_prev_check - self.t_prev_wake_event,
+                sleep_duration=delta_prev_check,
             )
-            # Add log entry for the sleep period
-            log_slept = Static(
-                f"{time.ctime(self.t_prev)} — Slept for {humanize.naturaldelta(delta_t)}",
-                classes="log slept",
-            )
-            # Await mounting the widgets and scroll to the end
-            await self.query_one("#past_periods").mount(log_active)
-            await self.query_one("#past_periods").mount(log_slept)
-            log_slept.scroll_visible()
             # Update timestamps and durations
-            self.t_last_wake_event = now
-            self.sleeping += delta_t
+            self.t_prev_wake_event = now
+            self.sleeping += delta_prev_check
         else:
             # Still active
-            self.awake += delta_t
-        # Update common timestamps and durations
-        self.t_prev = now
+            self.awake += delta_prev_check
+        # Update common timestamp and sleepiness
+        self.t_prev_check = now
         self.query_one("#sleepiness").sleepiness = self.sleeping / (
             self.awake + self.sleeping
         )
+
+    async def log_sleep_period(self, active_duration, sleep_duration):
+        """Log active and sleep entries after wake up.
+
+        Args:
+            active_duration (float): duration of last active period in seconds.
+            sleep_duration (float): duration of sleep period in seconds.
+        """
+        # Add log entry to finish up last active period
+        log_active = Static(
+            f"{time.ctime(self.t_prev_wake_event)} — Active for {humanize.precisedelta(active_duration)}",
+            classes="log active",
+        )
+        # Add log entry for the sleep period
+        log_slept = Static(
+            f"{time.ctime(self.t_prev_check)} — Slept for {humanize.precisedelta(sleep_duration)}",
+            classes="log slept",
+        )
+        # Await mounting the widgets and scroll to the end
+        await self.query_one("#past_periods").mount(log_active)
+        await self.query_one("#past_periods").mount(log_slept)
+        log_slept.scroll_visible()
 
 
 def main():
