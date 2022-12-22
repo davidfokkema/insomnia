@@ -41,7 +41,7 @@ class CurrentActivityWidget(Static):
         if is_tracking:
             self.query_one("#tracking_state").update("Tracking...")
         else:
-            self.query_one("#tracking_state").update("Paused tracking")
+            self.query_one("#tracking_state").update("Tracking paused...")
 
     def compose(self):
         yield Static(id="tracking_state")
