@@ -1,8 +1,10 @@
+import operator
 import random
 import time
 from dataclasses import dataclass, field
 
 import humanize
+import psutil
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
 from textual.app import App
 from textual.containers import Container
@@ -13,8 +15,10 @@ CHECK_DELAY = 1
 MIN_SLEEP_DURATION = 60
 
 
-@dataclass
+@dataclass(order=True)
 class ProcessStats:
+    """Process statistics like name and cpu times."""
+
     name: str
     user_time: float
     sys_time: float
@@ -27,6 +31,31 @@ class ProcessStats:
         return ProcessStats(
             self.name, self.user_time + other.user_time, self.sys_time + other.sys_time
         )
+
+    def __sub__(self, other):
+        return ProcessStats(
+            self.name, self.user_time - other.user_time, self.sys_time - other.sys_time
+        )
+
+
+def get_process_statistics():
+    """Get process statistics like name and cpu times.
+
+    Returns:
+        A dict where the keys are made up of tuples containing the
+        process ID and process creation time. This ensures that every process
+        gets a unique key, even if process IDs are reused. Each value is a
+        ProcessStats instance.
+    """
+    return {
+        (p.info["pid"], p.info["create_time"]): ProcessStats(
+            name=p.info["name"],
+            user_time=p.info["cpu_times"][0],
+            sys_time=p.info["cpu_times"][1],
+        )
+        for p in psutil.process_iter(attrs=["pid", "create_time", "name", "cpu_times"])
+        if p.info["cpu_times"] is not None
+    }
 
 
 class SleepinessDisplay(Static):
@@ -150,10 +179,23 @@ class InsomniaApp(App):
 
 
 def main():
-    p1 = ProcessStats("foo", 14, 12)
-    print(p1)
-    p1 += ProcessStats("foo", 2, 3)
-    print(p1)
+    baseline_stats = get_process_statistics()
+    process_stats = {}
+    print(len(baseline_stats))
+    time.sleep(1)
+    for _ in range(5):
+        process_stats |= get_process_statistics()
+        print(len(process_stats))
+        time.sleep(2)
+
+    delta = [
+        latest_stats - baseline_stats.get(k, ProcessStats(None, 0, 0))
+        for k, latest_stats in process_stats.items()
+    ]
+    print(len(delta))
+    print(sorted(delta, key=operator.attrgetter("total_time"), reverse=True)[:5])
+    print()
+    print()
 
     # app = InsomniaApp()
     # app.run()
