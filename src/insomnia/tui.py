@@ -1,17 +1,32 @@
 import random
 import time
-import humanize
+from dataclasses import dataclass, field
 
+import humanize
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
 from textual.app import App
 from textual.containers import Container
 from textual.reactive import reactive
-from textual.widget import Widget
 from textual.widgets import Footer, Header, Static
-
 
 CHECK_DELAY = 1
 MIN_SLEEP_DURATION = 60
+
+
+@dataclass
+class ProcessStats:
+    name: str
+    user_time: float
+    sys_time: float
+    total_time: float = field(init=False)
+
+    def __post_init__(self):
+        self.total_time = self.user_time + self.sys_time
+
+    def __add__(self, other):
+        return ProcessStats(
+            self.name, self.user_time + other.user_time, self.sys_time + other.sys_time
+        )
 
 
 class SleepinessDisplay(Static):
@@ -135,8 +150,13 @@ class InsomniaApp(App):
 
 
 def main():
-    app = InsomniaApp()
-    app.run()
+    p1 = ProcessStats("foo", 14, 12)
+    print(p1)
+    p1 += ProcessStats("foo", 2, 3)
+    print(p1)
+
+    # app = InsomniaApp()
+    # app.run()
 
 
 if __name__ == "__main__":
