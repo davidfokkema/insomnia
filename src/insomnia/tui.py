@@ -63,7 +63,7 @@ class InsomniaApp(App):
     def compose(self):
         self.t_prev_wake_event = self.t_prev_check = time.time()
 
-        self.set_interval(CHECK_DELAY, self.check_sleep)
+        self.set_interval(CHECK_DELAY, self.check_for_sleep)
         yield Header(show_clock=True)
         yield Footer()
         yield Container(id="past_periods")
@@ -72,7 +72,15 @@ class InsomniaApp(App):
     def action_toggle_tracking_state(self):
         self.query_one("#current_activity").toggle_tracking_state()
 
-    async def check_sleep(self):
+    async def check_for_sleep(self):
+        """Check if computer was sleeping since last check.
+
+        This method checks the elapsed time since the previous check. If more
+        time has passed then MIN_SLEEP_DURATION it assumes that the computer has
+        been sleeping. It is therefore important that you call this method
+        regularly. Say, once per second.
+
+        """
         now = time.time()
         delta_prev_check = now - self.t_prev_check
         if delta_prev_check > MIN_SLEEP_DURATION:  # or random.random() > 0.95:
