@@ -32,12 +32,12 @@ class SleepinessDisplay(Static):
 
 
 class CurrentActivityWidget(Static):
-    tracking_state = reactive(True)
+    is_tracking = reactive(True)
 
-    def toggle_tracking_state(self):
-        self.tracking_state = not self.tracking_state
+    def toggle_is_tracking(self):
+        self.is_tracking = not self.is_tracking
 
-    def watch_tracking_state(self, is_tracking):
+    def watch_is_tracking(self, is_tracking):
         if is_tracking:
             self.query_one("#tracking_state").update("Tracking...")
         else:
@@ -63,14 +63,24 @@ class InsomniaApp(App):
     def compose(self):
         self.t_prev_wake_event = self.t_prev_check = time.time()
 
-        self.set_interval(CHECK_DELAY, self.check_for_sleep)
+        self.sleep_timer = self.set_interval(CHECK_DELAY, self.check_for_sleep)
         yield Header(show_clock=True)
         yield Footer()
-        yield Container(id="past_periods")
+        yield Container(id="past_activity")
         yield CurrentActivityWidget(id="current_activity")
 
-    def action_toggle_tracking_state(self):
-        self.query_one("#current_activity").toggle_tracking_state()
+    async def action_toggle_tracking_state(self):
+        if self.query_one("#current_activity").is_tracking:
+            tracking_msg = Static("Stopped tracking sleeps")
+            self.awake += time.time() - self.t_prev_check
+            self.sleep_timer.pause()
+        else:
+            tracking_msg = Static("Started tracking sleeps")
+            self.t_prev_wake_event = self.t_prev_check = time.time()
+            self.sleep_timer.resume()
+        self.query_one("#current_activity").toggle_is_tracking()
+        await self.query_one("#past_activity").mount(tracking_msg)
+        tracking_msg.scroll_visible()
 
     async def check_for_sleep(self):
         """Check if computer was sleeping since last check.
@@ -119,8 +129,8 @@ class InsomniaApp(App):
             classes="log slept",
         )
         # Await mounting the widgets and scroll to the end
-        await self.query_one("#past_periods").mount(log_active)
-        await self.query_one("#past_periods").mount(log_slept)
+        await self.query_one("#past_activity").mount(log_active)
+        await self.query_one("#past_activity").mount(log_slept)
         log_slept.scroll_visible()
 
 
