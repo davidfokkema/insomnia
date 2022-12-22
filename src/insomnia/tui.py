@@ -71,11 +71,11 @@ class InsomniaApp(App):
 
     async def action_toggle_tracking_state(self):
         if self.query_one("#current_activity").is_tracking:
-            tracking_msg = Static("Stopped tracking sleeps")
+            tracking_msg = Static("Stopped tracking sleeps", classes="log stopped")
             self.awake += time.time() - self.t_prev_check
             self.sleep_timer.pause()
         else:
-            tracking_msg = Static("Started tracking sleeps")
+            tracking_msg = Static("Started tracking sleeps", classes="log started")
             self.t_prev_wake_event = self.t_prev_check = time.time()
             self.sleep_timer.resume()
         self.query_one("#current_activity").toggle_is_tracking()

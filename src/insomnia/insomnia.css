@@ -1,12 +1,10 @@
-#past_periods {
-    /* border: heavy; */
+#past_activity {
     height: 1fr;
     border: $primary heavy;
     padding: 0 1;
 }
 
 #current_activity {
-    /* border: heavy; */
     layout: horizontal;
     height: 3;
     border: $primary heavy;
@@ -29,13 +27,32 @@
     padding: 1;
 }
 
-.active {
-    background: $primary-background;
+.log {
     color: $text;
     text-style: bold;
+}
+
+.active {
+    background: $primary-background;
 }
 
 .slept {
     background: $boost;
     color: $text-muted;
+    text-style: none;
+}
+
+.started,
+.stopped {
+    height: 1;
+    padding: 0;
+    content-align: center middle;
+}
+
+.started {
+    background: $success-darken-2;
+}
+
+.stopped {
+    background: $error-darken-2;
 }
