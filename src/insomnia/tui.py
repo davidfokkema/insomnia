@@ -106,7 +106,8 @@ class InsomniaApp(App):
 
     def compose(self):
         self.t_prev_wake_event = self.t_prev_check = time.time()
-
+        self.baseline_stats = get_process_statistics()
+        self.process_stats = {}
         self.sleep_timer = self.set_interval(CHECK_DELAY, self.check_for_sleep)
         yield Header(show_clock=True)
         yield Footer()
@@ -115,12 +116,17 @@ class InsomniaApp(App):
 
     async def action_toggle_tracking_state(self):
         if self.query_one("#current_activity").is_tracking:
+            # Stop tracking sleeps
             tracking_msg = Static("Stopped tracking sleeps", classes="log stopped")
             self.awake += time.time() - self.t_prev_check
             self.sleep_timer.pause()
         else:
+            # Start tracking sleeps
             tracking_msg = Static("Started tracking sleeps", classes="log started")
             self.t_prev_wake_event = self.t_prev_check = time.time()
+            # Store baseline process statistics
+            self.baseline_stats = get_process_statistics()
+            self.process_stats = {}
             self.sleep_timer.resume()
         self.query_one("#current_activity").toggle_is_tracking()
         await self.query_one("#past_activity").mount(tracking_msg)
@@ -139,15 +145,17 @@ class InsomniaApp(App):
         delta_prev_check = now - self.t_prev_check
         if delta_prev_check > MIN_SLEEP_DURATION:  # or random.random() > 0.95:
             # Just woke up from sleep
-            await self.log_sleep_period(
+            await self.log_active_sleep_periods(
                 active_duration=self.t_prev_check - self.t_prev_wake_event,
                 sleep_duration=delta_prev_check,
+                top_processes=self.calculate_process_cpu_usage()[:3],
             )
             # Update timestamps and durations
             self.t_prev_wake_event = now
             self.sleeping += delta_prev_check
         else:
             # Still active
+            self.process_stats |= get_process_statistics()
             self.awake += delta_prev_check
         # Update common timestamp and sleepiness
         self.t_prev_check = now
@@ -155,16 +163,20 @@ class InsomniaApp(App):
             self.awake + self.sleeping
         )
 
-    async def log_sleep_period(self, active_duration, sleep_duration):
+    async def log_active_sleep_periods(
+        self, active_duration, sleep_duration, top_processes=None
+    ):
         """Log active and sleep entries after wake up.
 
         Args:
             active_duration (float): duration of last active period in seconds.
             sleep_duration (float): duration of sleep period in seconds.
+            top_processes (list): a list of CPU-intensive processes.
         """
         # Add log entry to finish up last active period
+        process_list = ", ".join([p.name for p in top_processes])
         log_active = Static(
-            f"{time.ctime(self.t_prev_wake_event)} — Active for {humanize.precisedelta(active_duration)}",
+            f"{time.ctime(self.t_prev_wake_event)} — Active for {humanize.precisedelta(active_duration)} ({process_list})",
             classes="log active",
         )
         # Add log entry for the sleep period
@@ -177,28 +189,30 @@ class InsomniaApp(App):
         await self.query_one("#past_activity").mount(log_slept)
         log_slept.scroll_visible()
 
+    def calculate_process_cpu_usage(self):
+        """Calculate CPU usage for all processes.
+
+        Using the stored baseline and periodically gathered statistics this
+        method calculates the CPU usage times of processes during the active
+        period. The list is sorted on total CPU time (most-intensive processes
+        first).
+
+        Returns:
+            A list of ProcessStats sorted on CPU total time in descending order.
+        """
+        return sorted(
+            [
+                latest_stats - self.baseline_stats.get(k, ProcessStats(None, 0, 0))
+                for k, latest_stats in self.process_stats.items()
+            ],
+            key=operator.attrgetter("total_time"),
+            reverse=True,
+        )
+
 
 def main():
-    baseline_stats = get_process_statistics()
-    process_stats = {}
-    print(len(baseline_stats))
-    time.sleep(1)
-    for _ in range(5):
-        process_stats |= get_process_statistics()
-        print(len(process_stats))
-        time.sleep(2)
-
-    delta = [
-        latest_stats - baseline_stats.get(k, ProcessStats(None, 0, 0))
-        for k, latest_stats in process_stats.items()
-    ]
-    print(len(delta))
-    print(sorted(delta, key=operator.attrgetter("total_time"), reverse=True)[:5])
-    print()
-    print()
-
-    # app = InsomniaApp()
-    # app.run()
+    app = InsomniaApp()
+    app.run()
 
 
 if __name__ == "__main__":
