@@ -394,7 +394,7 @@ tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
 name = "textual"
-version = "0.6.0"
+version = "0.8.0"
 description = "Modern Text User Interface framework"
 category = "main"
 optional = false
@@ -467,7 +467,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "a199e972fd9c40cfd72ce32fa8b532a9e61b851d86f1d985bb9b754637850f57"
+content-hash = "b8174acacde532fe7857b228207ea4a6eb288fea211e3fba711908fad54661c1"
 
 [metadata.files]
 aiohttp = [
@@ -898,8 +898,8 @@ stack-data = [
     {file = "stack_data-0.6.2.tar.gz", hash = "sha256:32d2dd0376772d01b6cb9fc996f3c8b57a357089dec328ed4b6553d037eaf815"},
 ]
 textual = [
-    {file = "textual-0.6.0-py3-none-any.whl", hash = "sha256:08236279ed0b53d264f7ac61fd346cace7a49fcc1682ea4d195c3045ac0715bc"},
-    {file = "textual-0.6.0.tar.gz", hash = "sha256:32e901085aaf217290025c4d934c414ef7e203da7d334b80333240e9b867e771"},
+    {file = "textual-0.8.0-py3-none-any.whl", hash = "sha256:99543a2900341c010f58aaee004e991e8f8031efa6ed7b1c1acd4abacfe28fec"},
+    {file = "textual-0.8.0.tar.gz", hash = "sha256:a2cd99f3e5ea8d90db1344e10c5fd7929eb2c2f88a84fb03b2de6b485cf39a1b"},
 ]
 traitlets = [
     {file = "traitlets-5.8.0-py3-none-any.whl", hash = "sha256:c864831efa0ba6576d09b44884b34e41defc18c0d7e720b4a2d6698c842cab3e"},
