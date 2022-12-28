@@ -27,19 +27,15 @@
     padding: 1;
 }
 
-.log {
-    color: $text;
-    text-style: bold;
-}
-
 .active {
+    height: 4;
     background: $primary-background;
+    color: $text;
 }
 
 .slept {
     background: $boost;
     color: $text-muted;
-    text-style: none;
 }
 
 .started,

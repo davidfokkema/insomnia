@@ -195,7 +195,8 @@ class InsomniaApp(App):
         """
         process_list = ", ".join([p.name for p in top_processes])
         log_active = Static(
-            f"{time.ctime(self.t_prev_wake_event)} — Active for {humanize.precisedelta(active_duration)} ({process_list})",
+            f"{time.ctime(self.t_prev_wake_event)} — Active for {humanize.precisedelta(active_duration)}\n"
+            f"Most active processes: [bold]{process_list}",
             classes="log active",
         )
         await self.query_one("#past_activity").mount(log_active)
