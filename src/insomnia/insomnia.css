@@ -22,13 +22,12 @@
 }
 
 .log {
-    height: 3;
+    height: auto;
     margin: 1;
     padding: 1;
 }
 
 .active {
-    height: 4;
     background: $primary-background;
     color: $text;
 }

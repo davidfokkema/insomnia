@@ -13,6 +13,7 @@ from textual.widgets import Footer, Header, Static
 
 CHECK_DELAY = 1
 MIN_SLEEP_DURATION = 60
+PROCESS_CPU_THRESHOLD = 0.8
 
 
 @dataclass(order=True)
@@ -119,7 +120,7 @@ class InsomniaApp(App):
             self.update_process_stats()
             await self.log_active_period(
                 active_duration=self.t_prev_check - self.t_prev_wake_event,
-                top_processes=self.calculate_process_cpu_usage()[:3],
+                top_processes=self.get_cpu_intensive_processes(),
             )
             tracking_msg = Static("Stopped tracking sleeps", classes="log stopped")
             self.awake += time.time() - self.t_prev_check
@@ -150,7 +151,7 @@ class InsomniaApp(App):
             # Just woke up from sleep, log active and sleep periods
             await self.log_active_period(
                 active_duration=self.t_prev_check - self.t_prev_wake_event,
-                top_processes=self.calculate_process_cpu_usage()[:3],
+                top_processes=self.get_cpu_intensive_processes(),
             )
             await self.log_sleep_period(
                 sleep_duration=delta_prev_check,
@@ -211,18 +212,22 @@ class InsomniaApp(App):
         """Update process statistics."""
         self.process_stats |= get_process_statistics()
 
-    def calculate_process_cpu_usage(self):
+    def get_cpu_intensive_processes(self):
         """Calculate CPU usage for all processes.
 
         Using the stored baseline and periodically gathered statistics this
         method calculates the CPU usage times of processes during the active
         period. The list is sorted on total CPU time (most-intensive processes
-        first).
+        first). This method yields ProcessStats instances until the total cpu
+        times used by the yielded processes exceeds the PROCESS_CPU_THRESHOLD.
+        The remaining processes used up all the rest and are not considered to
+        be important.
 
         Returns:
-            A list of ProcessStats sorted on CPU total time in descending order.
+            An interator yielding ProcessStats sorted on CPU total time in
+                descending order up to a threshold.
         """
-        return sorted(
+        processes = sorted(
             [
                 latest_stats - self.baseline_stats.get(k, ProcessStats(None, 0, 0))
                 for k, latest_stats in self.process_stats.items()
@@ -230,6 +235,14 @@ class InsomniaApp(App):
             key=operator.attrgetter("total_time"),
             reverse=True,
         )
+        sum_total_time = sum([p.total_time for p in processes])
+        threshold_time = PROCESS_CPU_THRESHOLD * sum_total_time
+        cpu_time = 0
+        for process in processes:
+            yield process
+            cpu_time += process.total_time
+            if cpu_time > threshold_time:
+                break
 
 
 def main():
