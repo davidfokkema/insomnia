@@ -106,8 +106,7 @@ class InsomniaApp(App):
 
     def compose(self):
         self.t_prev_wake_event = self.t_prev_check = time.time()
-        self.baseline_stats = get_process_statistics()
-        self.process_stats = {}
+        self.clear_process_stats()
         self.sleep_timer = self.set_interval(CHECK_DELAY, self.check_for_sleep)
         yield Header(show_clock=True)
         yield Footer()
@@ -125,8 +124,7 @@ class InsomniaApp(App):
             tracking_msg = Static("Started tracking sleeps", classes="log started")
             self.t_prev_wake_event = self.t_prev_check = time.time()
             # Store baseline process statistics
-            self.baseline_stats = get_process_statistics()
-            self.process_stats = {}
+            self.clear_process_stats()
             self.sleep_timer.resume()
         self.query_one("#current_activity").toggle_is_tracking()
         await self.query_one("#past_activity").mount(tracking_msg)
@@ -143,19 +141,21 @@ class InsomniaApp(App):
         """
         now = time.time()
         delta_prev_check = now - self.t_prev_check
-        if delta_prev_check > MIN_SLEEP_DURATION:  # or random.random() > 0.95:
-            # Just woke up from sleep
-            await self.log_active_sleep_periods(
+        if delta_prev_check > MIN_SLEEP_DURATION or random.random() > 0.9:
+            # Just woke up from sleep, log active and sleep periods
+            await self.log_active_period(
                 active_duration=self.t_prev_check - self.t_prev_wake_event,
-                sleep_duration=delta_prev_check,
                 top_processes=self.calculate_process_cpu_usage()[:3],
+            )
+            await self.log_sleep_period(
+                sleep_duration=delta_prev_check,
             )
             # Update timestamps and durations
             self.t_prev_wake_event = now
             self.sleeping += delta_prev_check
         else:
             # Still active
-            self.process_stats |= get_process_statistics()
+            self.update_process_stats()
             self.awake += delta_prev_check
         # Update common timestamp and sleepiness
         self.t_prev_check = now
@@ -163,31 +163,47 @@ class InsomniaApp(App):
             self.awake + self.sleeping
         )
 
-    async def log_active_sleep_periods(
-        self, active_duration, sleep_duration, top_processes=None
-    ):
-        """Log active and sleep entries after wake up.
+    async def log_sleep_period(self, sleep_duration):
+        """Log sleeping period.
+
+        Add a log entry for the previous sleeping period.
 
         Args:
-            active_duration (float): duration of last active period in seconds.
-            sleep_duration (float): duration of sleep period in seconds.
-            top_processes (list): a list of CPU-intensive processes.
+            sleep_duration (float): duration of sleeping period in seconds.
         """
-        # Add log entry to finish up last active period
+        log_slept = Static(
+            f"{time.ctime(self.t_prev_check)} — Slept for {humanize.precisedelta(sleep_duration)}",
+            classes="log slept",
+        )
+        await self.query_one("#past_activity").mount(log_slept)
+        log_slept.scroll_visible()
+
+    async def log_active_period(self, active_duration, top_processes):
+        """Log previous active period.
+
+        Add a log entry for the previous active period.
+
+        Args:
+            active_duration (float): duration of active period.
+            top_processes (list): a list of ProcessStats with the most
+                CPU-intensive processes.
+        """
         process_list = ", ".join([p.name for p in top_processes])
         log_active = Static(
             f"{time.ctime(self.t_prev_wake_event)} — Active for {humanize.precisedelta(active_duration)} ({process_list})",
             classes="log active",
         )
-        # Add log entry for the sleep period
-        log_slept = Static(
-            f"{time.ctime(self.t_prev_check)} — Slept for {humanize.precisedelta(sleep_duration)}",
-            classes="log slept",
-        )
-        # Await mounting the widgets and scroll to the end
         await self.query_one("#past_activity").mount(log_active)
-        await self.query_one("#past_activity").mount(log_slept)
-        log_slept.scroll_visible()
+        log_active.scroll_visible()
+
+    def clear_process_stats(self):
+        """Clear process statistics."""
+        self.baseline_stats = get_process_statistics()
+        self.process_stats = {}
+
+    def update_process_stats(self):
+        """Update process statistics."""
+        self.process_stats |= get_process_statistics()
 
     def calculate_process_cpu_usage(self):
         """Calculate CPU usage for all processes.
