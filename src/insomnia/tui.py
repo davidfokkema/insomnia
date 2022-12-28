@@ -146,7 +146,7 @@ class InsomniaApp(App):
         """
         now = time.time()
         delta_prev_check = now - self.t_prev_check
-        if delta_prev_check > MIN_SLEEP_DURATION or random.random() > 0.9:
+        if delta_prev_check > MIN_SLEEP_DURATION:  # or random.random() > 0.9:
             # Just woke up from sleep, log active and sleep periods
             await self.log_active_period(
                 active_duration=self.t_prev_check - self.t_prev_wake_event,
