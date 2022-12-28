@@ -115,7 +115,12 @@ class InsomniaApp(App):
 
     async def action_toggle_tracking_state(self):
         if self.query_one("#current_activity").is_tracking:
-            # Stop tracking sleeps
+            # Stop tracking sleeps, log active period first
+            self.update_process_stats()
+            await self.log_active_period(
+                active_duration=self.t_prev_check - self.t_prev_wake_event,
+                top_processes=self.calculate_process_cpu_usage()[:3],
+            )
             tracking_msg = Static("Stopped tracking sleeps", classes="log stopped")
             self.awake += time.time() - self.t_prev_check
             self.sleep_timer.pause()
