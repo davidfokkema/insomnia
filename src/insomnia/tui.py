@@ -13,7 +13,7 @@ from textual.widgets import Footer, Header, Static
 
 CHECK_DELAY = 1
 MIN_SLEEP_DURATION = 60
-PROCESS_CPU_THRESHOLD = 0.8
+PROCESS_CPU_THRESHOLD = 0.7
 
 
 @dataclass(order=True)
@@ -227,17 +227,26 @@ class InsomniaApp(App):
             An interator yielding ProcessStats sorted on CPU total time in
                 descending order up to a threshold.
         """
+        cumulative = {}
+        for key, latest_stats in self.process_stats.items():
+            single_process_stats = latest_stats - self.baseline_stats.get(
+                key, ProcessStats(None, 0, 0)
+            )
+            # Combine cpu times for processes with the same name
+            cumulative[latest_stats.name] = (
+                cumulative.get(latest_stats.name, ProcessStats(latest_stats.name, 0, 0))
+                + single_process_stats
+            )
+        # sort on total time
         processes = sorted(
-            [
-                latest_stats - self.baseline_stats.get(k, ProcessStats(None, 0, 0))
-                for k, latest_stats in self.process_stats.items()
-            ],
+            cumulative.values(),
             key=operator.attrgetter("total_time"),
             reverse=True,
         )
         sum_total_time = sum([p.total_time for p in processes])
         threshold_time = PROCESS_CPU_THRESHOLD * sum_total_time
         cpu_time = 0
+        # yield processes until time exceeds threshold
         for process in processes:
             yield process
             cpu_time += process.total_time
