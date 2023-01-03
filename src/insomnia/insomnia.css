@@ -28,12 +28,11 @@
 }
 
 .active {
-    background: $primary-background;
     color: $text;
 }
 
 .slept {
-    background: $boost;
+    background: $primary-background-darken-1;
     color: $text-muted;
 }
 

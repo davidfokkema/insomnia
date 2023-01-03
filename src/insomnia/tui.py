@@ -13,6 +13,7 @@ from textual.widgets import Footer, Header, Static
 
 CHECK_DELAY = 1
 MIN_SLEEP_DURATION = 60
+ACTIVE_TIME_SCALE = 3600
 PROCESS_CPU_THRESHOLD = 0.7
 
 
@@ -57,6 +58,22 @@ def get_process_statistics():
         for p in psutil.process_iter(attrs=["pid", "create_time", "name", "cpu_times"])
         if p.info["cpu_times"] is not None
     }
+
+
+def scale(start, end, factor):
+    """Scale linearly between start and end depending on factor.
+
+    For factor between 0.0 and 1.0, return linearly scaled values between start
+    and end rounded to the nearest integer.
+
+    Args:
+        start (float): value at start of range end (float): value at end of
+        range factor (float): a factor between 0.0 and 1.0
+
+    Returns:
+        int: the linearly scaled value rounded to the nearest integer.
+    """
+    return round(start + (end - start) * factor)
 
 
 class SleepinessDisplay(Static):
@@ -200,8 +217,24 @@ class InsomniaApp(App):
             f"Most active processes: [bold]{process_list}",
             classes="log active",
         )
+        log_active.styles.background = self.make_active_color(active_duration)
         await self.query_one("#past_activity").mount(log_active)
         log_active.scroll_visible()
+
+    def make_active_color(self, active_duration):
+        """Generate a background color for the active widget.
+
+        Generate a background color from a continous gradient starting at green
+        and changing via yellow into red. Green colours are generated for short
+        durations and red colors for long durations.
+
+        Args:
+            active_duration (float): The duration of the active period.
+        """
+        factor = active_duration / ACTIVE_TIME_SCALE
+        if factor > 1.0:
+            factor = 1.0
+        return f"rgb({scale(48, 0x60, factor)},{scale(54, 0, factor)},{scale(60, 0, factor)})"
 
     def clear_process_stats(self):
         """Clear process statistics."""
