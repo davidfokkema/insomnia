@@ -1,7 +1,8 @@
 [tool.poetry]
-name = "insomnia"
+name = "insomnia_app"
 version = "0.1.0"
-description = ""
+homepage = "https://github.com/davidfokkema/insomnia"
+description = "A TUI app to find out why your computer stays awake at night"
 authors = ["David Fokkema <davidfokkema@icloud.com>"]
 readme = "README.md"
 packages = [{include = "insomnia", from = "src"}]
