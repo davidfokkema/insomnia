@@ -119,12 +119,13 @@ class InsomniaApp(App):
     async def action_toggle_tracking_state(self):
         if self.query_one("#current_activity").is_tracking:
             # Stop tracking sleeps, log active period first
+            now = time.time()
             self.update_process_stats()
             await self.log_active_period(
-                active_duration=self.t_prev_check - self.t_prev_wake_event,
+                active_duration=now - self.t_prev_wake_event,
             )
             tracking_msg = Static("Stopped tracking sleeps", classes="log stopped")
-            self.awake += time.time() - self.t_prev_check
+            self.awake += now - self.t_prev_wake_event
             self.sleep_timer.pause()
         else:
             # Start tracking sleeps
@@ -157,6 +158,7 @@ class InsomniaApp(App):
                 sleep_duration=delta_prev_check,
             )
             # Update timestamps and durations
+            self.clear_process_stats()
             self.t_prev_wake_event = now
             self.sleeping += delta_prev_check
         else:
@@ -266,8 +268,10 @@ class InsomniaApp(App):
             reverse=True,
         )
         # yield processes until time exceeds threshold
+        self.log("[bold red]" + 20 * "-" + " Process statistics " + 20 * "-")
         for process in processes:
             if process.total_time / active_duration > PROCESS_CPU_THRESHOLD:
+                self.log(process, active_duration)
                 yield process
             else:
                 break
