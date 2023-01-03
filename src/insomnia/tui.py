@@ -2,6 +2,7 @@ import operator
 import random
 import time
 from dataclasses import dataclass, field
+from typing import List
 
 import humanize
 import psutil
@@ -15,7 +16,7 @@ from textual.widgets import Footer, Header, Static
 CHECK_DELAY = 1
 MIN_SLEEP_DURATION = 60
 ACTIVE_TIME_SCALE = 3600
-PROCESS_CPU_THRESHOLD = 0.7
+PROCESS_CPU_THRESHOLD = 0.1
 
 
 @dataclass(order=True)
@@ -122,7 +123,6 @@ class InsomniaApp(App):
             self.update_process_stats()
             await self.log_active_period(
                 active_duration=self.t_prev_check - self.t_prev_wake_event,
-                top_processes=self.get_cpu_intensive_processes(),
             )
             tracking_msg = Static("Stopped tracking sleeps", classes="log stopped")
             self.awake += time.time() - self.t_prev_check
@@ -153,7 +153,6 @@ class InsomniaApp(App):
             # Just woke up from sleep, log active and sleep periods
             await self.log_active_period(
                 active_duration=self.t_prev_check - self.t_prev_wake_event,
-                top_processes=self.get_cpu_intensive_processes(),
             )
             await self.log_sleep_period(
                 sleep_duration=delta_prev_check,
@@ -186,20 +185,24 @@ class InsomniaApp(App):
         await self.query_one("#past_activity").mount(log_slept)
         log_slept.scroll_visible()
 
-    async def log_active_period(self, active_duration, top_processes):
+    async def log_active_period(self, active_duration):
         """Log previous active period.
 
         Add a log entry for the previous active period.
 
         Args:
             active_duration (float): duration of active period.
-            top_processes (list): a list of ProcessStats with the most
-                CPU-intensive processes.
         """
-        process_list = ", ".join([p.name for p in top_processes])
+        process_msg = ", ".join(
+            [
+                f"{p.name} ({p.total_time / active_duration * 100:.0f}%)"
+                for p in self.get_cpu_intensive_processes(active_duration)
+            ]
+        )
+
         log_active = Static(
             f"{time.ctime(self.t_prev_wake_event)} — Active for {humanize.precisedelta(active_duration)}\n"
-            f"Most active processes: [bold]{process_list}",
+            f"Most active processes: [bold]{process_msg}",
             classes="log active",
         )
         log_active.styles.background = self.make_active_color(active_duration)
@@ -230,16 +233,18 @@ class InsomniaApp(App):
         """Update process statistics."""
         self.process_stats |= get_process_statistics()
 
-    def get_cpu_intensive_processes(self):
+    def get_cpu_intensive_processes(self, active_duration) -> List[ProcessStats]:
         """Calculate CPU usage for all processes.
 
         Using the stored baseline and periodically gathered statistics this
         method calculates the CPU usage times of processes during the active
         period. The list is sorted on total CPU time (most-intensive processes
         first). This method yields ProcessStats instances until the total cpu
-        times used by the yielded processes exceeds the PROCESS_CPU_THRESHOLD.
-        The remaining processes used up all the rest and are not considered to
-        be important.
+        time used by a process is less than PROCESS_CPU_THRESHOLD. The remaining
+        processes use even less CPU and are not considered to be important.
+
+        Args:
+            active_duration (float): duration of the active period
 
         Returns:
             An interator yielding ProcessStats sorted on CPU total time in
@@ -261,14 +266,11 @@ class InsomniaApp(App):
             key=operator.attrgetter("total_time"),
             reverse=True,
         )
-        sum_total_time = sum([p.total_time for p in processes])
-        threshold_time = PROCESS_CPU_THRESHOLD * sum_total_time
-        cpu_time = 0
         # yield processes until time exceeds threshold
         for process in processes:
-            yield process
-            cpu_time += process.total_time
-            if cpu_time > threshold_time:
+            if process.total_time / active_duration > PROCESS_CPU_THRESHOLD:
+                yield process
+            else:
                 break
 
 
