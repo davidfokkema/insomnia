@@ -7,6 +7,7 @@ import humanize
 import psutil
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
 from textual.app import App
+from textual.color import Color
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.widgets import Footer, Header, Static
@@ -58,22 +59,6 @@ def get_process_statistics():
         for p in psutil.process_iter(attrs=["pid", "create_time", "name", "cpu_times"])
         if p.info["cpu_times"] is not None
     }
-
-
-def scale(start, end, factor):
-    """Scale linearly between start and end depending on factor.
-
-    For factor between 0.0 and 1.0, return linearly scaled values between start
-    and end rounded to the nearest integer.
-
-    Args:
-        start (float): value at start of range end (float): value at end of
-        range factor (float): a factor between 0.0 and 1.0
-
-    Returns:
-        int: the linearly scaled value rounded to the nearest integer.
-    """
-    return round(start + (end - start) * factor)
 
 
 class SleepinessDisplay(Static):
@@ -234,7 +219,7 @@ class InsomniaApp(App):
         factor = active_duration / ACTIVE_TIME_SCALE
         if factor > 1.0:
             factor = 1.0
-        return f"rgb({scale(48, 0x60, factor)},{scale(54, 0, factor)},{scale(60, 0, factor)})"
+        return Color(48, 54, 60).blend(Color(96, 0, 0), factor)
 
     def clear_process_stats(self):
         """Clear process statistics."""
